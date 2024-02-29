@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% block head %}
+<script src="https://js.stripe.com/v3/"></script>
+{% endblock head %}
+{% block content %}
+    <h1>{{ item.name }}</h1>
+    <p>{{ item.description }}</p>
+    <p>{{ item.price }}</p>
+    <button id="buy-button" class="btn btn-primary">Купить</button>
+{% endblock content %}
+
+{% block scripts %}
+<script type="text/javascript">
+var stripe = Stripe("{{ stripe_pk }}");
+var buyButton = document.getElementById("buy-button");
+buyButton.addEventListener("click", function() {
+    fetch("{% url 'payments:buy_item' item.pk %}", {method: "GET"})
+    .then(response => { return response.json(); })
+    .then(session => stripe.redirectToCheckout({ sessionId: session.session_id }))
+    .then(function(result) {
+        console.log(result);
+        if (result.error) {
+            alert(result.error.message);
+        } else {
+            stripe.redirectToCheckout({ sessionId: result.session_id });
+        }
+    })
+    .catch(error => console.error("Error:", error))
+});
+</script>
+{% endblock scripts %}
+
+
