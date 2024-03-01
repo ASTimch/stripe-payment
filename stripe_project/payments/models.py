@@ -90,20 +90,15 @@ class Order(models.Model):
             return self.get_order_price() * self.discount.percent_off // 100
         return 0
 
+    def get_order_subtotal(self) -> int:
+        return self.get_order_price() - self.get_discount_amount()
+
     def get_tax_amount(self) -> int:
         """Cумма налога (копеек)."""
         if self.tax:
-            return (
-                (self.get_order_price() - self.get_discount_amount())
-                * self.tax.percent
-                // 100
-            )
+            return self.get_order_subtotal() * self.tax.percent // 100
         return 0
 
     def get_final_price(self) -> int:
         """Cумма налога (копеек)."""
-        return (
-            self.get_order_price()
-            - self.get_discount_amount()
-            + self.get_tax_amount()
-        )
+        return self.get_order_subtotal() + self.get_tax_amount()

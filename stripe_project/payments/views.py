@@ -1,7 +1,7 @@
 import stripe
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views import View
 from django.views.generic.base import TemplateView
@@ -35,7 +35,7 @@ class ItemCheckout(View):
             line_items=[
                 {
                     "price_data": {
-                        "currency": "usd",
+                        "currency": "rub",
                         "unit_amount": item.price,
                         "product_data": {
                             "name": item.name,
@@ -64,36 +64,22 @@ class OrderDetail(DetailView):
         return context
 
 
-class OrderCheckout(View):
-    def get(self, request, *args, **kwargs):
-        pk = kwargs.get("pk")
-        order = get_object_or_404(
-            Order.objects.prefetch_related("items"), pk=pk
-        )
-        domain = ""
-        if settings.DEBUG:
-            domain = "http://127.0.0.1:8000"
-        checkout_session = stripe.checkout.Session.create(
+class OrderCheckout(DetailView):
+    model = Order
+    template_name = "payments/order_checkout.html"
+    pk_url_kwarg = "pk"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        intent = stripe.PaymentIntent.create(
+            amount=self.object.get_final_price(),
+            currency="usd",
             payment_method_types=["card"],
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": "usd",
-                        "unit_amount": order.get_final_price(),
-                        "product_data": {
-                            "name": str(order),
-                        },
-                    },
-                    "quantity": 1,
-                },
-            ],
-            metadata={"product_id": order.id},
-            mode="payment",
-            success_url=domain + reverse("payments:buy_success"),
-            cancel_url=domain
-            + reverse("payments:order-detail", kwargs={"pk": pk}),
+            metadata={"integration_check": "accept_a_payment"},
         )
-        return JsonResponse({"session_id": checkout_session.id})
+        context["stripe_pk"] = settings.STRIPE_PUBLIC_KEY
+        context["clientSecret"] = intent.client_secret
+        return context
 
 
 class SuccessView(TemplateView):

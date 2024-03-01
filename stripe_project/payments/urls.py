@@ -10,7 +10,7 @@ urlpatterns = [
     path("buy/<int:pk>/", views.ItemCheckout.as_view(), name="item-checkout"),
     path("order/<int:pk>/", views.OrderDetail.as_view(), name="order-detail"),
     path(
-        "order-buy/<int:pk>/",
+        "order-checkout/<int:pk>/",
         views.OrderCheckout.as_view(),
         name="order-checkout",
     ),
