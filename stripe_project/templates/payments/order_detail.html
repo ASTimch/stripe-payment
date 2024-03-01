@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load django_bootstrap5 %}
+{% load custom_filters %}
 {% block head %}
   <script src="https://js.stripe.com/v3/"></script>
 {% endblock %}
@@ -18,10 +19,9 @@
       {% for item in order.items.all %}
         <tr>
           <th scope="row">{{ forloop.counter }}</th>
-          {% comment %} <td>{{ forloop.counter }}</td> {% endcomment %}
           <td>{{ item.name }}</td>
           <td>{{ item.description }}</td>
-          <td>{{ item.get_display_price }}</td>
+          <td>{{ item.price|cents_to_dollars }}</td>
         </tr>
       {% endfor %}
     </tbody>
@@ -30,8 +30,32 @@
         <th scope="row">Сумма</th>
         <td></td>
         <td></td>
-        <td>{{ order.get_display_price }}</td>
+        <td>{{ order.get_order_price|cents_to_dollars }}</td>
       </tr>
+      {% if order.discount %}
+        <tr>
+          <th scope="row">Скидка</th>
+          <td>{{ order.discount }}</td>
+          <td></td>
+          <td>{{ order.get_discount_amount|cents_to_dollars }}</td>
+        </tr>
+      {% endif %}
+      {% if order.tax %}
+        <tr>
+          <th scope="row">Налог</th>
+          <td>{{ order.tax }}</td>
+          <td></td>
+          <td>{{ order.get_tax_amount|cents_to_dollars }}</td>
+        </tr>
+      {% endif %}
+      {% if order.tax or order.discount %}
+        <tr>
+          <th scope="row">Итого</th>
+          <td>с учетом скидок и налогов</td>
+          <td></td>
+          <td>{{ order.get_final_price|cents_to_dollars }}</td>
+        </tr>
+      {% endif %}
     </tfoot>
   </table>
 

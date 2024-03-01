@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import View
+from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 
 from .models import Item, Order
@@ -78,7 +79,7 @@ class OrderCheckout(View):
                 {
                     "price_data": {
                         "currency": "usd",
-                        "unit_amount": order.get_order_price(),
+                        "unit_amount": order.get_final_price(),
                         "product_data": {
                             "name": str(order),
                         },
@@ -95,5 +96,5 @@ class OrderCheckout(View):
         return JsonResponse({"session_id": checkout_session.id})
 
 
-def buy_success(request):
-    return HttpResponse("buy success!")
+class SuccessView(TemplateView):
+    template_name = "payments/success.html"

@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% load django_bootstrap5 %}
+{% load custom_filters %}
 {% block head %}
 <script src="https://js.stripe.com/v3/"></script>
 {% endblock head %}
 {% block content %}
     <h1>{{ item.name }}</h1>
     <p>{{ item.description }}</p>
-    <p>{{ item.get_display_price }}</p>
+    <p>{{ item.price|cents_to_dollars }}</p>
     <button id="buy-button" class="btn btn-primary">Купить</button>
 {% endblock content %}
 
