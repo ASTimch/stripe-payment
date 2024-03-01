@@ -7,7 +7,7 @@
 {% block content %}
     <h1>{{ item.name }}</h1>
     <p>{{ item.description }}</p>
-    <p>{{ item.price|cents_to_dollars }}</p>
+    <p>{{ item.price|cents_to_dollars }}&nbsp&nbsp{{ item.currency }}</p>
     <button id="buy-button" class="btn btn-primary">Купить</button>
 {% endblock content %}
 

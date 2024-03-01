@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 
 from .models import Discount, Item, Order, Tax
@@ -7,7 +8,7 @@ admin.site.empty_value_display = "-"
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description", "price")
+    list_display = ("id", "name", "description", "price", "currency")
     list_display_links = ("name",)
     readonly_fields = ("id",)
     search_fields = ("name",)

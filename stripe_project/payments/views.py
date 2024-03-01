@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView
 
 from .models import Item, Order
 
@@ -35,7 +36,7 @@ class ItemCheckout(View):
             line_items=[
                 {
                     "price_data": {
-                        "currency": "rub",
+                        "currency": item.currency,
                         "unit_amount": item.price,
                         "product_data": {
                             "name": item.name,
@@ -51,6 +52,11 @@ class ItemCheckout(View):
             + reverse("payments:item-detail", kwargs={"pk": pk}),
         )
         return JsonResponse({"session_id": checkout_session.id})
+
+
+class ItemList(ListView):
+    model = Item
+    template_name = "payments/item_list.html"
 
 
 class OrderDetail(DetailView):

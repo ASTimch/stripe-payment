@@ -1,12 +1,23 @@
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
 
 
 class Item(models.Model):
+    class Currency(models.TextChoices):
+        USD = "usd", "$USD"
+        RUB = "rub", "Рубль"
+
     name = models.CharField(max_length=255, verbose_name="Наименование")
     description = models.CharField(max_length=255, verbose_name="Описание")
     price = models.PositiveIntegerField(verbose_name="Цена")
+    currency = models.CharField(
+        max_length=5,
+        verbose_name="Валюта",
+        choices=Currency.choices,
+        default=Currency.RUB,
+    )
 
     class Meta:
         verbose_name = "Товар"
@@ -73,6 +84,14 @@ class Order(models.Model):
         verbose_name = "Заказ"
         verbose_name_plural = "Заказы"
         default_related_name = "orders"
+
+    def clean(self):
+        super().clean()
+        currencies = [item.currency for item in self.items.all()]
+        if len(currencies) > 1:
+            raise ValidationError(
+                "Items in the order have different currencies."
+            )
 
     def __str__(self):
         return f"id: {self.pk}"
