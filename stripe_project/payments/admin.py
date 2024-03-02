@@ -14,15 +14,25 @@ class ItemAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
-class ItemInline(admin.TabularInline):
-    model = Order.items.through
-    extra = 0
+class OrderForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ["items", "discount", "tax"]
+
+    def clean_items(self):
+        values = self.cleaned_data["items"]
+        currencies = set([item.currency for item in values])
+        if len(currencies) > 1:
+            raise forms.ValidationError(
+                "Items in the order have different currencies."
+            )
+        return values
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    inlines = (ItemInline,)
     list_display = ("pk", "discount", "tax")
+    form = OrderForm
 
 
 @admin.register(Discount)
