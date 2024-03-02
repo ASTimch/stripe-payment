@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+{% load custom_filters %}
+{% block head %}
+  <script src="https://js.stripe.com/v3/"></script>
+{% endblock %}
+{% block content %}
+  <h1>Список товаров</h1>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Наименование</th>
+        <th>Описание</th>
+        <th>Цена</th>
+      </tr>
+    </thead>
+    {% for item in object_list %}
+      <tr>
+        <td>
+          <a href="{% url 'payments:item-detail' item.pk %}">{{ item.name }}</a>
+        </td>
+        <td>{{ item.description }}</td>
+        <td>{{ item.price|cents_to_dollars }}&nbsp&nbsp{{ item.currency }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endblock %}

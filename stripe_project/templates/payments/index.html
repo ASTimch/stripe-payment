@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+{% load custom_filters %}
+{% block content %}
+    <h1>Тестовый проект работы со stripe</h1>
+    <h2><a href="{% url 'payments:item-list' %}">Список товаров Item</a><h2>
+    <h2><a href="{% url 'payments:order-list' %}">Список заказов Order</a><h2>
+{% endblock content %}

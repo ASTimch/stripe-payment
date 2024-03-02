@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+{% load custom_filters %}
+{% block head %}
+  <script src="https://js.stripe.com/v3/"></script>
+{% endblock %}
+{% block content %}
+  <h2>Подтверждение платежа</h2>
+  <div class="card" style="width: 500px">
+    <div class="card-body">
+      <form id="payment-form" data-secret="{{ clientSecret }}">
+        {% csrf_token %}
+        <div id="payment-element" style="margin-bottom: 10px">
+          <!-- placeholder -->
+        </div>
+        <button id="submit-button" class="btn btn-primary"><span id="button-text">Оплатить</span></button>
+        <div id="error-message" style="color: red">
+          <!-- error message -->
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script type="text/javascript">
+    var stripe = Stripe('{{ stripe_pk }}')
+    const options = {
+      clientSecret: '{{ clientSecret }}'
+    }
+    const elements = stripe.elements(options)
+    const paymentElement = elements.create('card')
+    paymentElement.mount('#payment-element')
+    
+    var submitButton = document.getElementById('submit-button')
+    submitButton.addEventListener('click', (event) => {
+      event.preventDefault()
+      pay(stripe, paymentElement, '{{ clientSecret }}')
+    })
+    
+    var pay = function (stripe, paymentElement, clientSecret) {
+      stripe
+        .confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: paymentElement
+          }
+        })
+        .then(function (result) {
+          if (result.error) {
+            showError(result.error.message)
+          } else if (result.paymentIntent.status === 'succeeded') {
+            window.location.replace("{% url 'payments:buy_success' %}")
+          } else {
+            showError('Unknown error!')
+          }
+        })
+    }
+    var showError = function (errorMsgText) {
+      var errorMsg = document.getElementById('error-message')
+      errorMsg.textContent = errorMsgText
+      setTimeout(function () {
+        errorMsg.textContent = ''
+      }, 3000)
+    }
+  </script>
+{% endblock %}
