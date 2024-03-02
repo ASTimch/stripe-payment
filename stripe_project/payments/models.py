@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -112,3 +113,9 @@ class Order(models.Model):
     def get_final_price(self) -> int:
         """Cумма налога (копеек)."""
         return self.get_order_subtotal() + self.get_tax_amount()
+
+    def get_currency(self) -> str:
+        """Текущая валюта заказа."""
+        if self.items.exists():
+            return self.items.first().currency
+        return settings.DEFAULT_CURRENCY

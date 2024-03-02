@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+{% load custom_filters %}
+{% block content %}
+  <h1>Список заказов</h1>
+  <ul>
+    {% for order in object_list %}
+      <li><a href="{% url 'payments:order-detail' order.pk %}">{{ order }}</a></li>
+    {% endfor %}
+  </ul>
+{% endblock %}

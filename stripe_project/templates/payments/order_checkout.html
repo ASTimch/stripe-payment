@@ -6,11 +6,11 @@
 {% endblock %}
 {% block content %}
   <h2>Подтверждение платежа</h2>
-  <div class="card mx-5">
+  <div class="card" style="width: 500px">
     <div class="card-body">
       <form id="payment-form" data-secret="{{ clientSecret }}">
         {% csrf_token %}
-        <div id="payment-element" style="margin-bottom: 10px;">
+        <div id="payment-element" style="margin-bottom: 10px">
           <!-- placeholder -->
         </div>
         <button id="submit-button" class="btn btn-primary"><span id="button-text">Оплатить</span></button>
