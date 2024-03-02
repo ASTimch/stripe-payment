@@ -85,14 +85,6 @@ class Order(models.Model):
         verbose_name_plural = "Заказы"
         default_related_name = "orders"
 
-    def clean(self):
-        super().clean()
-        currencies = [item.currency for item in self.items.all()]
-        if len(currencies) > 1:
-            raise ValidationError(
-                "Items in the order have different currencies."
-            )
-
     def __str__(self):
         return f"id: {self.pk}"
 
