@@ -89,7 +89,6 @@ class OrderCheckout(DetailView):
             intent = OrderPaymentService.get_intent(self.object)
         except Exception as e:
             JsonResponse(data=str(e), status=403)
-
         context["stripe_pk"] = settings.STRIPE_PUBLIC_KEY
         context["clientSecret"] = intent.client_secret
         return context

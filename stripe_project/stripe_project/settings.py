@@ -62,10 +62,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "stripe_project.wsgi.application"
 
 DATABASES = {
-    # "default": {
-    #     "ENGINE": "django.db.backends.sqlite3",
-    #     "NAME": BASE_DIR / "db.sqlite3",
-    # }
     "default": {
         "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
         "NAME": os.getenv("POSTGRES_DB", os.path.join(BASE_DIR, "db.sqlite3")),
@@ -105,8 +101,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DEFAULT_CURRENCY = "usd"
 STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "pk_test_1234")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_1234")
-
-# stripe.tax.Settings.modify(
-#     defaults={"tax_code": "txcd_10000000", "tax_behavior": "exclusive"},
-#     head_office={"address": {"country": "DE"}},
-# )

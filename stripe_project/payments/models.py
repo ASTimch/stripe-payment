@@ -56,13 +56,6 @@ class Discount(models.Model):
     def __str__(self):
         return f"{self.name} {self.percent_off}%"
 
-    # def save(self, *args, **kwargs):
-    #     super().save(*args, **kwargs)
-    #     print(self)
-    #     print(args)
-    #     print(kwargs)
-    #     # DiscountService.update_coupon()
-
 
 class ShippingTax(CurrencyMixin):
     name = models.CharField(max_length=255, verbose_name="Наименование")
