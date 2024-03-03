@@ -105,3 +105,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DEFAULT_CURRENCY = "usd"
 STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "pk_test_1234")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_1234")
+
+# stripe.tax.Settings.modify(
+#     defaults={"tax_code": "txcd_10000000", "tax_behavior": "exclusive"},
+#     head_office={"address": {"country": "DE"}},
+# )

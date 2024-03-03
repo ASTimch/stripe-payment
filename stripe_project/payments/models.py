@@ -4,20 +4,30 @@ from django.db import models
 from django.urls import reverse
 
 
-class Item(models.Model):
-    class Currency(models.TextChoices):
-        USD = "usd", "$USD"
-        RUB = "rub", "Рубль"
+class Currency(models.TextChoices):
+    USD = "usd", "$USD"
+    RUB = "rub", "Рубль"
 
-    name = models.CharField(max_length=255, verbose_name="Наименование")
-    description = models.CharField(max_length=255, verbose_name="Описание")
-    price = models.PositiveIntegerField(verbose_name="Цена (коп)")
+
+class TaxBehavior(models.TextChoices):
+    INCLUSIVE = "inclusive"
+    EXCLUSIVE = "exclusive"
+    UNEXPECTED = "unexpected"
+
+
+class CurrencyMixin(models.Model):
     currency = models.CharField(
         max_length=5,
         verbose_name="Валюта",
         choices=Currency.choices,
         default=Currency.RUB,
     )
+
+
+class Item(CurrencyMixin):
+    name = models.CharField(max_length=255, verbose_name="Наименование")
+    description = models.CharField(max_length=255, verbose_name="Описание")
+    price = models.PositiveIntegerField(verbose_name="Цена (коп)")
 
     class Meta:
         verbose_name = "Товар"
@@ -46,21 +56,34 @@ class Discount(models.Model):
     def __str__(self):
         return f"{self.name} {self.percent_off}%"
 
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #     print(self)
+    #     print(args)
+    #     print(kwargs)
+    #     # DiscountService.update_coupon()
 
-class Tax(models.Model):
+
+class ShippingTax(CurrencyMixin):
     name = models.CharField(max_length=255, verbose_name="Наименование")
-    percent = models.PositiveSmallIntegerField(
-        verbose_name="Величина налога в %",
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    amount = models.PositiveIntegerField(
+        verbose_name="Стоимость доставки (коп)"
     )
+    behavior = models.CharField(
+        max_length=15,
+        verbose_name="Тип",
+        choices=TaxBehavior.choices,
+        default=TaxBehavior.EXCLUSIVE,
+    )
+    code = models.CharField(max_length=15, verbose_name="Налоговый код")
 
     class Meta:
-        verbose_name = "Налог"
-        verbose_name_plural = "Налоги"
+        verbose_name = "Доставка"
+        verbose_name_plural = "Доставка"
         ordering = ("name",)
 
     def __str__(self):
-        return f"{self.name} {self.percent}%"
+        return f"{self.name} {self.amount / 100} ({self.currency})"
 
 
 class Order(models.Model):
@@ -73,7 +96,7 @@ class Order(models.Model):
         verbose_name="Скидка",
     )
     tax = models.ForeignKey(
-        Tax,
+        ShippingTax,
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
@@ -107,7 +130,7 @@ class Order(models.Model):
     def get_tax_amount(self) -> int:
         """Cумма налога (копеек)."""
         if self.tax:
-            return self.get_order_subtotal() * self.tax.percent // 100
+            return self.tax.amount
         return 0
 
     def get_final_price(self) -> int:
