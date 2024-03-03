@@ -58,6 +58,29 @@
       {% endif %}
     </tfoot>
   </table>
-
+  <button id="buy-session-button" class="btn btn-primary">Купить (сессия) </button>
   <a href="{% url 'payments:order-checkout' order.pk %}" id="buy-button" class="btn btn-primary">Купить</a>
 {% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+var stripe = Stripe("{{ stripe_pk }}");
+var buyButton = document.getElementById("buy-session-button");
+buyButton.addEventListener("click", function() {
+    fetch("{% url 'payments:order-session-checkout' order.pk %}", {method: "GET"})
+    .then(response => { return response.json(); })
+    .then(session => stripe.redirectToCheckout({ sessionId: session.session_id }))
+    .then(function(result) {
+        console.log(result);
+        if (result.error) {
+            alert(result.error.message);
+        } else {
+            stripe.redirectToCheckout({ sessionId: result.session_id });
+        }
+    })
+    .catch(error => console.error("Error:", error))
+});
+</script>
+{% endblock scripts %}
+
+

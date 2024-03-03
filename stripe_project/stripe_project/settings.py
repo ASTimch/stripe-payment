@@ -12,6 +12,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-key")
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 DOMAIN_URL = os.getenv("DOMAIN_URL", "localhost")
+
+DOMAIN = DOMAIN_URL if DEBUG else ""
+
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split()
 
 INSTALLED_APPS = [
@@ -59,10 +62,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "stripe_project.wsgi.application"
 
 DATABASES = {
-    # "default": {
-    #     "ENGINE": "django.db.backends.sqlite3",
-    #     "NAME": BASE_DIR / "db.sqlite3",
-    # }
     "default": {
         "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
         "NAME": os.getenv("POSTGRES_DB", os.path.join(BASE_DIR, "db.sqlite3")),

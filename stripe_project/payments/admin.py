@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib import admin
 
-from .models import Discount, Item, Order, Tax
+from .models import Discount, Item, Order, ShippingTax
+from .services import DiscountService
 
 admin.site.empty_value_display = "-"
 
@@ -28,6 +29,17 @@ class OrderForm(forms.ModelForm):
             )
         return values
 
+    def clean(self):
+        values = self.cleaned_data["items"]
+        tax = self.cleaned_data["tax"]
+        currencies = set([item.currency for item in values])
+        if tax:
+            currencies.add(tax.currency)
+        if len(currencies) > 1:
+            raise forms.ValidationError(
+                "Items and tax in the order have different currencies."
+            )
+
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -42,10 +54,15 @@ class DiscountAdmin(admin.ModelAdmin):
     readonly_fields = ("id",)
     search_fields = ("name",)
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        coupon_id = DiscountService.generate_coupon_id(obj.id)
+        DiscountService.update_coupon(coupon_id, obj.name, obj.percent_off)
 
-@admin.register(Tax)
-class TaxAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "percent")
+
+@admin.register(ShippingTax)
+class ShippingTaxAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "amount", "currency")
     list_display_links = ("name",)
     readonly_fields = ("id",)
     search_fields = ("name",)
