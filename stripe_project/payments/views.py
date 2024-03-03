@@ -66,7 +66,6 @@ class OrderDetail(DetailView):
 
 class OrderSessionCheckout(View):
     def get(self, request, pk: int, *args, **kwargs):
-        # pk = kwargs.get("pk")
         try:
             checkout_session = OrderPaymentService.get_session(
                 pk,
@@ -87,12 +86,7 @@ class OrderCheckout(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            intent = stripe.PaymentIntent.create(
-                amount=self.object.get_final_price(),
-                currency=self.object.get_currency(),
-                payment_method_types=["card"],
-                metadata={"integration_check": "accept_a_payment"},
-            )
+            intent = OrderPaymentService.get_intent(self.object)
         except Exception as e:
             JsonResponse(data=str(e), status=403)
 

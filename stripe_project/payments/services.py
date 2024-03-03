@@ -1,5 +1,6 @@
 import stripe
 from django.shortcuts import get_object_or_404
+from stripe import PaymentIntent
 from stripe.checkout import Session
 
 from .models import Item, Order, ShippingTax
@@ -64,7 +65,7 @@ class ItemPaymentService:
             cancel_url: Адрес перенаправления при отмене.
         """
         item = get_object_or_404(Item, pk=pk)
-        checkout_session = stripe.checkout.Session.create(
+        return stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[cls.get_price_data(item)],
             metadata={"product_id": item.id},
@@ -72,7 +73,6 @@ class ItemPaymentService:
             success_url=success_url,
             cancel_url=cancel_url,
         )
-        return checkout_session
 
 
 class ShippingTaxService:
@@ -129,7 +129,8 @@ class OrderPaymentService:
             ),
             pk=pk,
         )
-        checkout_session = stripe.checkout.Session.create(
+        shipping_data = ShippingTaxService.get_shipping_rate_data(order.tax)
+        return stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=cls.get_price_data(order),
             discounts=cls.get_discounts_data(order),
@@ -137,12 +138,19 @@ class OrderPaymentService:
             mode="payment",
             success_url=success_url,
             cancel_url=cancel_url,
-            shipping_options=[
-                {
-                    "shipping_rate_data": ShippingTaxService.get_shipping_rate_data(
-                        order.tax
-                    )
-                }
-            ],
+            shipping_options=[{"shipping_rate_data": shipping_data}],
         )
-        return checkout_session
+
+    @classmethod
+    def get_intent(cls, order: Order) -> PaymentIntent:
+        """Возвращает объект PaymentIntent для заказа.
+
+        Args:
+            order: Объект заказа.
+        """
+        return stripe.PaymentIntent.create(
+            amount=order.get_final_price(),
+            currency=order.get_currency(),
+            payment_method_types=["card"],
+            metadata={"integration_check": "accept_a_payment"},
+        )
