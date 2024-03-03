@@ -12,6 +12,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-key")
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 DOMAIN_URL = os.getenv("DOMAIN_URL", "localhost")
+
+DOMAIN = DOMAIN_URL if DEBUG else ""
+
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split()
 
 INSTALLED_APPS = [

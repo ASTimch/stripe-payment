@@ -17,4 +17,9 @@ urlpatterns = [
         views.OrderCheckout.as_view(),
         name="order-checkout",
     ),
+    path(
+        "order-session-checkout/<int:pk>/",
+        views.OrderSessionCheckout.as_view(),
+        name="order-session-checkout",
+    ),
 ]
