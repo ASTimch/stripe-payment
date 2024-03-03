@@ -25,11 +25,15 @@
 {% block scripts %}
   <script type="text/javascript">
     var stripe = Stripe('{{ stripe_pk }}')
-    const options = {
-      clientSecret: '{{ clientSecret }}'
+    const clientSecret = '{{ clientSecret }}'
+    const appearance = {
+      theme: 'stripe'
     }
-    const elements = stripe.elements(options)
-    const paymentElement = elements.create('card')
+    elements = stripe.elements({ appearance, clientSecret })
+    const paymentElementOptions = {
+      layout: 'tabs'
+    }
+    const paymentElement = elements.create('payment', paymentElementOptions)
     paymentElement.mount('#payment-element')
     
     var submitButton = document.getElementById('submit-button')
@@ -39,21 +43,15 @@
     })
     
     var pay = function (stripe, paymentElement, clientSecret) {
-      stripe
-        .confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: paymentElement
-          }
-        })
-        .then(function (result) {
-          if (result.error) {
-            showError(result.error.message)
-          } else if (result.paymentIntent.status === 'succeeded') {
-            window.location.replace("{% url 'payments:buy_success' %}")
-          } else {
-            showError('Unknown error!')
-          }
-        })
+      stripe.confirmPayment({ elements, redirect: 'if_required' }).then(function (result) {
+        if (result.error) {
+          showError(result.error.message)
+        } else if (result.paymentIntent.status === 'succeeded') {
+          window.location.replace("{% url 'payments:buy_success' %}")
+        } else {
+          showError('Unknown error!')
+        }
+      })
     }
     var showError = function (errorMsgText) {
       var errorMsg = document.getElementById('error-message')

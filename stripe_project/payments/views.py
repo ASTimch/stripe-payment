@@ -1,7 +1,6 @@
 import stripe
 from django.conf import settings
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views import View
 from django.views.generic.base import TemplateView
@@ -9,6 +8,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
 from .models import Item, Order
+from .services import ItemPaymentService
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -31,31 +31,19 @@ class ItemDetail(DetailView):
 class ItemCheckout(View):
     def get(self, request, *args, **kwargs):
         pk = kwargs.get("pk")
-        item = get_object_or_404(Item, pk=pk)
         domain = ""
         if settings.DEBUG:
             domain = settings.DOMAIN_URL
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": item.currency,
-                        "unit_amount": item.price,
-                        "product_data": {
-                            "name": item.name,
-                        },
-                    },
-                    "quantity": 1,
-                },
-            ],
-            metadata={"product_id": item.id},
-            mode="payment",
-            success_url=domain + reverse("payments:buy_success"),
-            cancel_url=domain
-            + reverse("payments:item-detail", kwargs={"pk": pk}),
-        )
-        return JsonResponse({"session_id": checkout_session.id})
+        try:
+            checkout_session = ItemPaymentService.get_session(
+                pk,
+                success_url=domain + reverse("payments:buy_success"),
+                cancel_url=domain
+                + reverse("payments:item-detail", kwargs={"pk": pk}),
+            )
+            return JsonResponse({"session_id": checkout_session.id})
+        except Exception as e:
+            JsonResponse(data=str(e), status=403)
 
 
 class ItemList(ListView):
@@ -94,8 +82,7 @@ class OrderCheckout(DetailView):
                 metadata={"integration_check": "accept_a_payment"},
             )
         except Exception as e:
-            print(e)
-            raise
+            JsonResponse(data=str(e), status=403)
 
         context["stripe_pk"] = settings.STRIPE_PUBLIC_KEY
         context["clientSecret"] = intent.client_secret
