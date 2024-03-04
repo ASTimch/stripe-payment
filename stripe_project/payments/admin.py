@@ -1,8 +1,8 @@
 from django import forms
 from django.contrib import admin
 
-from .models import Discount, Item, Order, ShippingTax
-from .services import DiscountService
+from .models import Discount, Item, Order, ShippingTax, Tax
+from .services import DiscountService, TaxService
 
 admin.site.empty_value_display = "-"
 
@@ -18,7 +18,7 @@ class ItemAdmin(admin.ModelAdmin):
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ["items", "discount", "tax"]
+        fields = ["items", "discount", "tax", "shipping"]
 
     def clean_items(self):
         values = self.cleaned_data["items"]
@@ -31,10 +31,10 @@ class OrderForm(forms.ModelForm):
 
     def clean(self):
         values = self.cleaned_data["items"]
-        tax = self.cleaned_data["tax"]
+        shipping = self.cleaned_data["shipping"]
         currencies = set([item.currency for item in values])
-        if tax:
-            currencies.add(tax.currency)
+        if shipping:
+            currencies.add(shipping.currency)
         if len(currencies) > 1:
             raise forms.ValidationError(
                 "Items and tax in the order have different currencies."
@@ -58,6 +58,46 @@ class DiscountAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         coupon_id = DiscountService.generate_coupon_id(obj.id)
         DiscountService.update_coupon(coupon_id, obj.name, obj.percent_off)
+
+
+@admin.register(Tax)
+class TaxAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "description",
+        "percentage",
+        "behavior",
+        "tax_id",
+    )
+    list_display_links = ("name",)
+    readonly_fields = ("id", "tax_id")
+    search_fields = ("name",)
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # запрещено менять процентную ставку после создания
+            return self.readonly_fields + ("bahavior",)
+        return self.readonly_fields
+
+    def save_model(self, request, obj, form, change):
+        try:
+            TaxService.update_tax(
+                obj.tax_id,
+                obj.name,
+                obj.description,
+                obj.percentage,
+                obj.behavior,
+            )
+        except Exception:
+            # create new tax
+            tax_rate = TaxService.create_tax(
+                obj.name,
+                obj.description,
+                obj.percentage,
+                obj.behavior,
+            )
+            obj.tax_id = tax_rate.id
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(ShippingTax)
