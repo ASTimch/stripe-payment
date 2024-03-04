@@ -48,6 +48,14 @@
           <td>{{ order.get_tax_amount|cents_to_dollars }}</td>
         </tr>
       {% endif %}
+      {% if order.shipping %}
+        <tr>
+          <th scope="row">Доставка</th>
+          <td>{{ order.shipping }}</td>
+          <td></td>
+          <td>{{ order.get_shipping_amount|cents_to_dollars }}</td>
+        </tr>
+      {% endif %}
       {% if order.tax or order.discount %}
         <tr>
           <th scope="row">Итого</th>

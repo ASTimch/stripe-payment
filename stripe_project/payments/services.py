@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from stripe import PaymentIntent
 from stripe.checkout import Session
 
-from .models import Item, Order, ShippingTax
+from .models import Item, Order, ShippingTax, TaxBehavior
 
 
 class DiscountService:
@@ -34,14 +34,48 @@ class DiscountService:
         )
 
 
+class TaxService:
+    @classmethod
+    def create_tax(
+        cls,
+        name: str,
+        description: str,
+        percentage: float,
+        behavior: TaxBehavior,
+    ):
+        return stripe.TaxRate.create(
+            display_name=name,
+            description=description,
+            percentage=percentage,
+            inclusive=behavior == TaxBehavior.INCLUSIVE,
+        )
+
+    @classmethod
+    def update_tax(
+        cls,
+        tax_id: str,
+        name: str,
+        description: str,
+        percentage: float,
+        behavior: TaxBehavior,
+    ):
+        stripe.TaxRate.modify(
+            id=tax_id,
+            display_name=name,
+            description=description,
+        )
+
+
 class ItemPaymentService:
     @classmethod
-    def get_price_data(cls, item: Item) -> dict:
+    def get_price_data(cls, item: Item, tax_rates: list[str] = None) -> dict:
         """Возвращает словарь с данными товарной позиции.
 
         Args:
             item: Объект товарной позиции.
         """
+        if tax_rates is None:
+            tax_rates = []
         return {
             "price_data": {
                 "currency": item.currency,
@@ -51,6 +85,7 @@ class ItemPaymentService:
                 },
             },
             "quantity": 1,
+            "tax_rates": tax_rates,
         }
 
     @classmethod
@@ -77,31 +112,33 @@ class ItemPaymentService:
 
 class ShippingTaxService:
     @classmethod
-    def get_shipping_rate_data(cls, tax: ShippingTax):
-        """Возвращает словарь для заданного объекта tax."""
+    def get_shipping_rate_data(cls, shipping: ShippingTax):
+        """Возвращает словарь для заданного объекта shipping."""
 
         return {
-            "display_name": tax.name,
+            "display_name": shipping.name,
             "fixed_amount": {
-                "amount": tax.amount,
-                "currency": tax.currency,
+                "amount": shipping.amount,
+                "currency": shipping.currency,
             },
-            "tax_behavior": tax.behavior,
-            "tax_code": tax.code,  # "txcd_92010001"
+            "tax_behavior": shipping.behavior,
+            "tax_code": shipping.code,  # "txcd_92010001"
             "type": "fixed_amount",
         }
 
 
 class OrderPaymentService:
     @classmethod
-    def get_price_data(cls, order: Order) -> list[dict]:
+    def get_price_data(
+        cls, order: Order, tax_rates: list[str] = None
+    ) -> list[dict]:
         """Возвращает список словарей с данными товарных позиций заказа.
 
         Args:
             order: Объект заказа.
         """
         return [
-            ItemPaymentService.get_price_data(item)
+            ItemPaymentService.get_price_data(item, tax_rates)
             for item in order.items.all()
         ]
 
@@ -124,15 +161,18 @@ class OrderPaymentService:
             cancel_url: Адрес перенаправления при отмене.
         """
         order = get_object_or_404(
-            Order.objects.select_related("tax", "discount").prefetch_related(
-                "items"
-            ),
+            Order.objects.select_related(
+                "tax", "discount", "shipping"
+            ).prefetch_related("items"),
             pk=pk,
         )
-        shipping_data = ShippingTaxService.get_shipping_rate_data(order.tax)
+        shipping_data = ShippingTaxService.get_shipping_rate_data(
+            order.shipping
+        )
+        tax_rates = [order.tax.tax_id] if order.tax else []
         return stripe.checkout.Session.create(
             payment_method_types=["card"],
-            line_items=cls.get_price_data(order),
+            line_items=cls.get_price_data(order, tax_rates),
             discounts=cls.get_discounts_data(order),
             metadata={"order_id": order.id},
             mode="payment",
