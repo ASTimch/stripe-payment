@@ -40,7 +40,7 @@ class ItemCheckout(View):
             )
             return JsonResponse({"session_id": checkout_session.id})
         except Exception as e:
-            JsonResponse(data=str(e), status=403)
+            return JsonResponse({"message": str(e)}, status=500)
 
 
 class ItemList(ListView):
@@ -75,7 +75,7 @@ class OrderSessionCheckout(View):
             )
             return JsonResponse({"session_id": checkout_session.id})
         except Exception as e:
-            JsonResponse(data=str(e), status=403)
+            return JsonResponse({"message": str(e)}, status=500)
 
 
 class OrderCheckout(DetailView):
@@ -88,7 +88,7 @@ class OrderCheckout(DetailView):
         try:
             intent = OrderPaymentService.get_intent(self.object)
         except Exception as e:
-            JsonResponse(data=str(e), status=403)
+            return JsonResponse({"message": str(e)}, status=500)
         context["stripe_pk"] = settings.STRIPE_PUBLIC_KEY
         context["clientSecret"] = intent.client_secret
         return context
